@@ -4,47 +4,45 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Random;
 
-// Fruit คือ Class สำหรับผลไม้
+// Bomb คือ Class สำหรับระเบิด
 // สืบทอดคุณสมบัติและ Method พื้นฐานจาก FallingObject
-public class Fruit extends FallingObject {
+public class Bomb extends FallingObject {
 
-    // ใช้สำหรับสุ่มตำแหน่งของผลไม้
+    // ใช้สำหรับสุ่มตำแหน่งของระเบิด
     private Random random;
 
     // ==========================================
     // Constructor
     // ==========================================
-    public Fruit() {
+    public Bomb() {
 
-        // กำหนดขนาดของผลไม้
+        // กำหนดขนาดของระเบิด
         width = 30;
         height = 30;
 
-        // กำหนดความเร็วในการตก
-        speed = 3;
+        // ระเบิดตกเร็วกว่าผลไม้นิดหน่อย
+        speed = 6;
 
         // สร้าง Object สำหรับสุ่มตัวเลข
         random = new Random();
 
         // สุ่มตำแหน่งแกน X
-        // โดยไม่ให้ผลไม้ออกนอกขอบหน้าจอ
         x = random.nextInt(
             GamePanel.WIDTH - width
         );
 
-        // ให้ผลไม้เริ่มจากด้านบนของหน้าจอ
+        // เริ่มจากด้านบนของหน้าจอ
         y = -height;
     }
 
     // ==========================================
-    // วาดผลไม้
+    // วาดระเบิด
     // ==========================================
-    // Override Method render() จาก FallingObject
     @Override
     public void render(Graphics g) {
 
-        // ตอนนี้ใช้วงกลมสีแดงแทนรูปผลไม้ก่อน
-        g.setColor(Color.RED);
+        // ตอนนี้ใช้วงกลมสีดำแทนระเบิดก่อน
+        g.setColor(Color.BLACK);
 
         g.fillOval(
             x,

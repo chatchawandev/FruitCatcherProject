@@ -5,7 +5,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-
+import java.util.Random;
 import javax.swing.JPanel;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
@@ -17,8 +17,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     // ตะกร้าของผู้เล่น
     private Basket basket;
 
-    // ผลไม้
-    private Fruit fruit;
+    // วัตถุที่กำลังตกลงมาจากด้านบน
+    // สามารถเป็น Fruit, Bomb หรือ Heart ได้
+    private FallingObject fallingObject;
+
+    private Random random;
 
     // คะแนนของผู้เล่น
     private int score;
@@ -29,12 +32,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     // สะานถของเกมส์
     private boolean gameOver;
 
-
     // Thread สำหรับ Game Loop
     private Thread gameThread;
 
     // ใช้ควบคุมว่า Game Loop ทำงานอยู่หรือไม่
     private boolean running;
+
+    // Level ของผู้เล่น
+    private int level;
 
     // Constructor
     public GamePanel() {
@@ -55,17 +60,23 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
         // สร้างตะกร้า
         basket = new Basket();
-        // สร้างผลไม้ลูกแรก
-        fruit = new Fruit();
+
+        // สร้าง Object สำหรับสุ่มตัวเลข
+        random = new Random();
 
         // กำหนดคะแนนเริ่มต้น
         score = 0 ;
 
         // ชีวิตของผู้เล่น
-        life = 30;
+        life = 3;
+
+        level = 1;
 
         // ตอนเริ่มเกมส์ ยังไม่ game over
         gameOver = false;
+
+        // สุ่มวัตถุชิ้นแรกที่ตกลงมา
+        spawnFallingObject();
 
         // เริ่ม Game Loop
         startGame();
@@ -120,33 +131,68 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         basket.update();
 
         // อัพเดทตำแหน่งผลไม้
-        fruit.update();
+        fallingObject.update();
 
         // ตรวจสอบว่าผลไม้ชนกับตะกร้า
-        if (fruit.getBounds().intersects(basket.getBounds())) {
-            // เพิ่มคะแนน 
-            score++;
+        if (fallingObject.getBounds().intersects(basket.getBounds())) {
+
+            if (fallingObject instanceof Fruit) {
+                // เพิ่มคะแนน +1
+                score++;
+                  // คะแนนเพิ่ม updateLevel
+                updateLevel();
+
+                System.out.println("Score: " + score);
+              
+                
+            } else if (fallingObject instanceof Bomb) {
+                // ลบคะแนน -2
+                score -= 2;
+                // คะแนนห้ามต่ำกว่า 0
+                if (score < 0) {
+                    score = 0;
+                }
+
+                updateLevel();
+
+                System.out.println("Score: " + score);
+            } else if (fallingObject instanceof Heart) {
+                // เพิ่ม ชีวิต +1
+                life++;
+                System.out.println(
+                    "Catch Heart | Life: " + life
+                );
+            }
             
-            // ดูใน Terminal
-            System.out.println("Score: " + score);
-
-            fruit = new Fruit();
-
+            // สุ่ม Object ตัวใหม่
+            spawnFallingObject();
             return ;
-
         }
 
         // ถ้าผลไม้ตกพันหน้าจอ
-        if (fruit.isOutOfScreen()) {
+        if (fallingObject.isOutOfScreen()) {
+            
+            if (fallingObject instanceof Fruit) {
+                life -- ;
+                System.out.println("Life: " + life ); // แสดงข้อมูลชีวิตที่เหลือ
 
-            life--; 
-            System.out.println("Life: " + life ); // แสดงข้อมูลชีวิตที่เหลือ
+                if (life <= 0) {
+                    gameOver = true;
+                    return ;
+                } 
+            } else if (fallingObject instanceof Bomb) {
+                  System.out.println("Miss Bomb : ");
+            } else if (fallingObject instanceof Heart) {
+                life --;
+                System.out.println("Life: " + life ); // แสดงข้อมูลชีวิตที่เหลือ
 
-            if (life <= 0) {
-                gameOver = true;
-            } else {
-            fruit = new Fruit();
+                if (life <= -1) {
+                    gameOver = true;
+                    return ;
+                } 
             }
+
+            spawnFallingObject();
         }
 
     }
@@ -159,6 +205,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
         // แสดงชื่อเกม
         g.setColor(Color.BLACK);
+
+        // แสดง Level ปัจจุบัน
+        g.drawString(
+            "Level: " + level,
+            170,
+            30
+        );
 
         g.drawString(
             "Fruit Catcher",
@@ -180,17 +233,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             30
         );
 
-        // แสดงจำนวนชีวิต
-        g.drawString(
-            "Life: 3",
-            330,
-            30
-        );
-
         // วาดตะกร้า
         basket.render(g);
         // วาดผลไม้
-        fruit.render(g);
+        fallingObject.render(g);
 
 
         // ถ้าเกมจบ
@@ -249,4 +295,69 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     public void keyTyped(KeyEvent e) {
         // ไม่ได้ใช้งาน
     }
+
+    // สุ่มวันถุที่ตกลงมาจากด้านบน
+    public void spawnFallingObject() {
+        
+        int randomNumber = random.nextInt(10);
+       
+        if (randomNumber < 6) {
+            fallingObject = new Fruit();
+        } else if (randomNumber < 9) {
+             fallingObject = new Bomb();
+        } 
+        else {
+            fallingObject = new Heart();
+        }
+
+        // อ่านความเร็วเดิมของ Object
+        int baseSpeed = fallingObject.getSpeed();
+
+        // Level 1 → +0
+        // Level 2 → +1
+        // Level 3 → +2
+        // Level 4 → +3
+        int extraSpeed = level - 1;
+
+        // กำหนดความเร็วใหม่
+        fallingObject.setSpeed(
+            baseSpeed + extraSpeed
+        );
+
+        // Debug ดูค่าความเร็ว
+        System.out.println(
+            "Spawn: "
+            + fallingObject.getClass().getSimpleName()
+            + " | Level: " + level
+            + " | Speed: " + fallingObject.getSpeed()
+        );
+        
+
+    }
+
+    // อัปเดต Level ตามคะแนนของผู้เล่น
+    public void updateLevel() {
+
+        // Score 15 ขึ้นไป = Level 4
+        if (score >= 15) {
+
+            level = 4;
+
+        // Score 10 - 14 = Level 3
+        } else if (score >= 10) {
+
+            level = 3;
+
+        // Score 5 - 9 = Level 2
+        } else if (score >= 5) {
+
+            level = 2;
+
+        // Score ต่ำกว่า 5 = Level 1
+        } else {
+
+            level = 1;
+        }
+    }
+
 }
