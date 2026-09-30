@@ -3,6 +3,8 @@ package oop.game;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Random;
+import java.awt.Image;
+import javax.swing.ImageIcon;
 
 // Fruit คือ Class สำหรับผลไม้
 // สืบทอดคุณสมบัติและ Method พื้นฐานจาก FallingObject
@@ -10,6 +12,9 @@ public class Fruit extends FallingObject {
 
     // ใช้สำหรับสุ่มตำแหน่งของผลไม้
     private Random random;
+
+    // ภาพพผลไม้
+    private Image appleImage;
 
     // ==========================================
     // Constructor
@@ -34,6 +39,12 @@ public class Fruit extends FallingObject {
 
         // ให้ผลไม้เริ่มจากด้านบนของหน้าจอ
         y = -height;
+
+
+        // โหลดรูปผลไม้
+        appleImage = new ImageIcon(
+            "res/Apple.png"
+        ).getImage();
     }
 
     // ==========================================
@@ -43,14 +54,14 @@ public class Fruit extends FallingObject {
     @Override
     public void render(Graphics g) {
 
-        // ตอนนี้ใช้วงกลมสีแดงแทนรูปผลไม้ก่อน
-        g.setColor(Color.RED);
-
-        g.fillOval(
+        g.drawImage(
+            appleImage,
             x,
             y,
             width,
-            height
+            height,
+            null
         );
+        
     }
 }

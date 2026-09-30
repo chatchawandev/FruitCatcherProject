@@ -1,8 +1,9 @@
 package oop.game;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.Image;
+import javax.swing.ImageIcon;
 
 public class Basket {
 
@@ -21,12 +22,15 @@ public class Basket {
     private boolean left;
     private boolean right;
 
+    // เก็บรูปภาพตะกร้า
+    private Image basketImage;
+
     // Constructor
     public Basket() {
 
         // กำหนดขนาดตะกร้า
-        width = 80;
-        height = 30;
+        width = 100;
+        height = 60;
 
         // ความเร็วของตะกร้า
         speed = 5;
@@ -36,6 +40,11 @@ public class Basket {
 
         // อยู่บริเวณด้านล่างของหน้าจอ
         y = GamePanel.HEIGHT - height - 20;
+
+        // โหลดรูปตะกร้า
+        basketImage = new ImageIcon(
+            "res/Basket.png"
+        ).getImage();
     }
 
     // อัปเดตตำแหน่งของตะกร้า
@@ -64,18 +73,18 @@ public class Basket {
 
     // วาดตะกร้า
     public void render(Graphics g) {
-        // ต้องใส่รูปแทนสี
-        g.setColor(Color.ORANGE);
 
-        g.fillRect(
+        g.drawImage(
+            basketImage,
             x,
             y,
             width,
-            height
+            height,
+            null
         );
     }
 
-    // ใช้สำหรับตรวจการชนกับผลไม้ในภายหลัง
+    // ใช้สำหรับตรวจการชนกับผลไม้
     public Rectangle getBounds() {
 
         return new Rectangle(

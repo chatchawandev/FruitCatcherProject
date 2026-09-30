@@ -3,12 +3,18 @@ package oop.game;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Random;
+import java.awt.Image;
+import javax.swing.ImageIcon;
+
 
 // Heart คือวัตถุเพิ่มชีวิตของผู้เล่น
 // สืบทอดคุณสมบัติพื้นฐานจาก FallingObject
 public class Heart extends FallingObject {
 
     private Random random;
+
+    // เพิ่มภาพหัวใจ
+    private Image heartImage;
 
     // Constructor
     public Heart() {
@@ -31,20 +37,25 @@ public class Heart extends FallingObject {
 
         // เริ่มต้นให้อยู่เหนือหน้าจอ
         y = -height;
+
+        // โหลดรูปหัวใจ
+        heartImage = new ImageIcon(
+            "res/Heart.png"
+        ).getImage();
     }
 
     // วาด Heart ลงบนหน้าจอ
     @Override
     public void render(Graphics g) {
 
-        // ตอนนี้ใช้สีชมพูแทนรูปหัวใจไปก่อน
-        g.setColor(Color.PINK);
-
-        g.fillOval(
+        g.drawImage(
+            heartImage,
             x,
             y,
             width,
-            height
+            height,
+            null
         );
+
     }
 }

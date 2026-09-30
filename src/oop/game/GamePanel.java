@@ -7,6 +7,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.Random;
 import javax.swing.JPanel;
+import java.awt.Image;
+import javax.swing.ImageIcon;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
 
@@ -40,6 +47,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
     // Level ของผู้เล่น
     private int level;
+
+    // เก็บรูปภาพพื้นหลัง
+    private Image backgroundImage;
+
+    // คะแนนสูงสุด
+    private int hiScore;
+
+    // ไฟล์สำหรับเก็บคะแนนสูงสุด
+    private final String HISCORE_FILE = "MIG.txt";
 
     // Constructor
     public GamePanel() {
@@ -75,11 +91,117 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         // ตอนเริ่มเกมส์ ยังไม่ game over
         gameOver = false;
 
+        // โหลดรูปภาพพื้นหลัง
+        backgroundImage = new ImageIcon(
+            "res/Background.png"
+        ).getImage();
+
+        // อ่านคะแนน
+        readHiscore();
+
         // สุ่มวัตถุชิ้นแรกที่ตกลงมา
         spawnFallingObject();
 
         // เริ่ม Game Loop
         startGame();
+    }
+
+    // เริ่มเกมใหม่
+    private void restartGame() {
+
+        // Reset คะแนน
+        score = 0;
+
+        // Reset ชีวิต
+        life = 3;
+
+        // Reset Level
+        level = 1;
+
+        // สร้างตะกร้าใหม่
+        basket = new Basket();
+
+        // สุ่ม Object ใหม่
+        spawnFallingObject();
+
+        // ออกจากสถานะ Game Over
+        gameOver = false;
+
+        System.out.println(
+            "===== RESTART GAME ====="
+        );
+    }
+
+    // อ่านคะแนนสูงสุดจากไฟล์
+    private void readHiscore() {
+
+        File hiScoreFile = new File(HISCORE_FILE);
+
+        // ถ้ายังไม่มีไฟล์ ให้เริ่มที่ 0
+        if (!hiScoreFile.exists()) {
+            hiScore = 0;
+            return;
+        }
+
+        try (
+            BufferedReader buffReader =
+                new BufferedReader(
+                    new FileReader(hiScoreFile)
+                )
+        ) {
+
+            String line = buffReader.readLine();
+
+            if (line != null && line.startsWith("Hiscore:")) {
+
+                String scoreText = line.replace(
+                    "Hiscore:",
+                    ""
+                );
+
+                hiScore = Integer.parseInt(
+                    scoreText.trim()
+                );
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            hiScore = 0;
+        }
+    }
+
+
+    // บันทึกคะแนนสูงสุดลงไฟล์
+    private void writeHiscore() {
+        System.out.println(
+            "========= score: " + score + " | hiScore: " + hiScore
+        );
+
+        // บันทึกเฉพาะตอนที่ทำคะแนนสูงกว่าเดิม
+        if (score > hiScore) {
+
+            hiScore = score;
+
+            File hiScoreFile =
+                new File(HISCORE_FILE);
+
+            try (
+                BufferedWriter buffWriter =
+                    new BufferedWriter(
+                        new FileWriter(hiScoreFile)
+                    )
+            ) {
+
+                buffWriter.write(
+                    "Hiscore:" + hiScore
+                );
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        }
     }
 
     // เริ่ม Thread ของเกม
@@ -122,32 +244,43 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     // อัปเดตวัตถุต่าง ๆ ภายในเกม
     private void gameUpdate() {
 
+        // ถ้า Game Over แล้ว ไม่ต้องอัปเดตเกมต่อ
         if (gameOver) {
-            // true
-            return ;
+            return;
         }
 
-        // อัพเดทตำแหน่งตะกร้า
+        // อัปเดตตำแหน่ง
+        // อัปเดตตำแหน่งตะกร้า
         basket.update();
 
-        // อัพเดทตำแหน่งผลไม้
+        // อัปเดตตำแหน่งวัตถุที่กำลังตก
         fallingObject.update();
 
-        // ตรวจสอบว่าผลไม้ชนกับตะกร้า
+
+        // ตรวจสอบว่าวัตถุชนกับตะกร้า
         if (fallingObject.getBounds().intersects(basket.getBounds())) {
 
+            // Fruit
+            // เก็บ Fruit = Score +1
             if (fallingObject instanceof Fruit) {
-                // เพิ่มคะแนน +1
-                score++;
-                  // คะแนนเพิ่ม updateLevel
-                updateLevel();
 
-                System.out.println("Score: " + score);
-              
-                
+                score++;
+
+                updateLevel();
+                  // บันทึก High Score
+                writeHiscore();
+
+                System.out.println(
+                    "Catch Fruit | Score: " + score
+                );
+
+
+            // Bomb
+            // เก็บ Bomb = Score -2
             } else if (fallingObject instanceof Bomb) {
-                // ลบคะแนน -2
+
                 score -= 2;
+
                 // คะแนนห้ามต่ำกว่า 0
                 if (score < 0) {
                     score = 0;
@@ -155,115 +288,224 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
                 updateLevel();
 
-                System.out.println("Score: " + score);
+                System.out.println(
+                    "Catch Bomb | Score: " + score
+                );
+
+
+            // Heart
+            // เก็บ Heart = Life +1
             } else if (fallingObject instanceof Heart) {
-                // เพิ่ม ชีวิต +1
+
                 life++;
+
                 System.out.println(
                     "Catch Heart | Life: " + life
                 );
+
+
+            // เก็บ Deathbomb = Game Over ทันที
+            } else if (fallingObject instanceof Deathbomb) {
+
+                life = 0;
+                gameOver = true;
+
+                System.out.println(
+                    "Catch Deathbomb | GAME OVER"
+                );
+
+                return;
             }
-            
+
+
+            // เมื่อเก็บ Object แล้ว
             // สุ่ม Object ตัวใหม่
             spawnFallingObject();
-            return ;
+
+            return;
         }
 
-        // ถ้าผลไม้ตกพันหน้าจอ
+
+        // ตรวจสอบว่าวัตถุตกพ้นหน้าจอ
         if (fallingObject.isOutOfScreen()) {
-            
+
+            // พลาด Fruit = Life -1
             if (fallingObject instanceof Fruit) {
-                life -- ;
-                System.out.println("Life: " + life ); // แสดงข้อมูลชีวิตที่เหลือ
 
+                life--;
+
+                System.out.println(
+                    "Miss Fruit | Life: " + life
+                );
+
+                // Life หมด = Game Over
                 if (life <= 0) {
-                    gameOver = true;
-                    return ;
-                } 
-            } else if (fallingObject instanceof Bomb) {
-                  System.out.println("Miss Bomb : ");
-            } else if (fallingObject instanceof Heart) {
-                life --;
-                System.out.println("Life: " + life ); // แสดงข้อมูลชีวิตที่เหลือ
 
-                if (life <= -1) {
+                    life = 0;
                     gameOver = true;
-                    return ;
-                } 
+
+                    System.out.println(
+                        "No Life | GAME OVER"
+                    );
+
+                    return;
+                }
+
+
+            // พลาด Bomb = ไม่เสียอะไร
+            } else if (fallingObject instanceof Bomb) {
+
+                System.out.println(
+                    "Miss Bomb"
+                );
+
+
+            // พลาด Heart = ไม่เสียอะไร
+            } else if (fallingObject instanceof Heart) {
+
+                System.out.println(
+                    "Miss Heart"
+                );
+
+
+            // Deathbomb
+            // พลาด Deathbomb = รอด
+            } else if (fallingObject instanceof Deathbomb) {
+
+                System.out.println(
+                    "Miss Deathbomb"
+                );
             }
 
+            // สุ่ม Object ตัวใหม่
             spawnFallingObject();
         }
-
     }
 
-    // วาดสิ่งต่าง ๆ ลงบนหน้าจอ
+    // วาดสิ่งต่าง ๆ ลงบนหน้าจอ 
     @Override
     protected void paintComponent(Graphics g) {
 
         super.paintComponent(g);
 
-        // แสดงชื่อเกม
-        g.setColor(Color.BLACK);
-
-        // แสดง Level ปัจจุบัน
-        g.drawString(
-            "Level: " + level,
-            170,
-            30
+        g.drawImage(
+            backgroundImage,
+            0,
+            0,
+            WIDTH,
+            HEIGHT,
+            this
         );
 
-        g.drawString(
-            "Fruit Catcher",
-            160,
-            50
-        );
+        // วาดตะกร้า
+        basket.render(g);
 
-        // แสดงจำนวนชีวิต
-        g.drawString(
-            "Life: " + life,
-            330,
-            30
-        );
+        // วาด Fruit / Bomb / Heart
+        fallingObject.render(g);
 
-        // แสดงคะแนน
+        // แถบรองข้อความด้านบน
+        g.setColor(new Color(0, 0, 0, 220));
+        g.fillRect(0, 0, WIDTH, 70);
+
+        // ตั้งรูปแบบข้อความ
+        g.setColor(Color.WHITE);
+
+        g.setFont(new java.awt.Font(
+            "SansSerif",
+            java.awt.Font.BOLD,
+            18
+        ));
+       
+        // แสดงคะแนนระหว่างเล่น
         g.drawString(
             "Score: " + score,
             20,
             30
         );
 
-        // วาดตะกร้า
-        basket.render(g);
-        // วาดผลไม้
-        fallingObject.render(g);
+        // แสดง Level
+        g.drawString(
+            "Level: " + level,
+            165,
+            30
+        );
 
+        // แสดงจำนวนชีวิต
+        g.drawString(
+            "Life: " + life,
+            325,
+            30
+        );
 
-        // ถ้าเกมจบ
+        // แสดงชื่อเกม
+        g.drawString(
+            "Fruit Catcher",
+            145,
+            55
+        );
+
+        // 5. แสดง Game Over
         if (gameOver) {
 
+            // GAME OVER สีแดง
             g.setColor(Color.RED);
+
+            g.setFont(
+                new java.awt.Font(
+                    "SansSerif",
+                    java.awt.Font.BOLD,
+                    24
+                )
+            );
 
             g.drawString(
                 "GAME OVER",
-                160,
+                125,
                 280
             );
 
-            g.setColor(Color.BLACK);
+            // คะแนนตอนจบ
+            g.setColor(Color.WHITE);
 
+            g.setFont(
+                new java.awt.Font(
+                    "SansSerif",
+                    java.awt.Font.BOLD,
+                    18
+                )
+            );
+
+            // คะแนนตอนจบ
             g.drawString(
                 "Score: " + score,
-                170,
-                310
+                155,
+                315
             );
+
+            // คะแนนสูงสุด
+            g.drawString(
+                "High Score: " + hiScore,
+                135,
+                345
+            );
+
+            g.drawString(
+                "Press SPACE to Restart",
+                110,
+                380
+            );
+
         }
     }
 
     // ทำงานเมื่อกดปุ่ม
     @Override
     public void keyPressed(KeyEvent e) {
-
+        // กด Spacebar ตอน Game Over เพื่อเริ่มเกมใหม่
+        if (gameOver && e.getKeyCode() == KeyEvent.VK_SPACE ) {
+            restartGame();
+            return;
+        }
         // กดลูกศรซ้าย
         if (e.getKeyCode() == KeyEvent.VK_LEFT) {
             basket.setLeft(true);
@@ -273,6 +515,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
             basket.setRight(true);
         }
+
     }
 
     // ทำงานเมื่อปล่อยปุ่ม
@@ -299,15 +542,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     // สุ่มวันถุที่ตกลงมาจากด้านบน
     public void spawnFallingObject() {
         
-        int randomNumber = random.nextInt(10);
-       
-        if (randomNumber < 6) {
+        int randomNumber = random.nextInt(100);
+
+        if (randomNumber < 55) {
+            // Fruit 55%
             fallingObject = new Fruit();
-        } else if (randomNumber < 9) {
-             fallingObject = new Bomb();
-        } 
-        else {
+        } else if (randomNumber < 80) {
+            // Bomb 25%
+            fallingObject = new Bomb();
+        } else if (randomNumber < 95) {
+            // Heart 15%
             fallingObject = new Heart();
+        } else {
+            // Deathbomb 5%
+            fallingObject = new Deathbomb();
         }
 
         // อ่านความเร็วเดิมของ Object

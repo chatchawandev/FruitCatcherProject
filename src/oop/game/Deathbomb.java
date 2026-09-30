@@ -1,32 +1,29 @@
 package oop.game;
 
-import java.awt.Color;
 import java.awt.Graphics;
-import java.util.Random;
 import java.awt.Image;
+import java.util.Random;
 import javax.swing.ImageIcon;
 
-// Bomb คือ Class สำหรับระเบิด
-// สืบทอดคุณสมบัติและ Method พื้นฐานจาก FallingObject
-public class Bomb extends FallingObject {
 
-    // ใช้สำหรับสุ่มตำแหน่งของระเบิด
+// สืบทอดคุณสมบัติและ Method พื้นฐานจาก FallingObject
+public class Deathbomb extends FallingObject {
+
+    // ใช้สำหรับสุ่มตำแหน่งของ Deathbomb
     private Random random;
 
-    // เก็บรูปภาพระเบิด
-    private Image bombImage;
-    
-    // ==========================================
-    // Constructor
-    // ==========================================
-    public Bomb() {
+    // เก็บรูปภาพ Deathbomb
+    private Image deathImage;
 
-        // กำหนดขนาดของระเบิด
+    // Constructor
+    public Deathbomb() {
+
+        // กำหนดขนาดของ Deathbomb
         width = 30;
         height = 30;
 
-        // ระเบิดตกเร็วกว่าผลไม้นิดหน่อย
-        speed = 6;
+        // Deathbomb ตกเร็ว
+        speed = 8;
 
         // สร้าง Object สำหรับสุ่มตัวเลข
         random = new Random();
@@ -39,21 +36,20 @@ public class Bomb extends FallingObject {
         // เริ่มจากด้านบนของหน้าจอ
         y = -height;
 
-        // โหลดรูประเบิด
-        bombImage = new ImageIcon(
-            "res/Bomb.png"
+        // โหลดรูป Deathbomb
+        deathImage = new ImageIcon(
+            "res/Deathbomb.png"
         ).getImage();
-
     }
 
     // ==========================================
-    // วาดระเบิด
+    // วาด Deathbomb
     // ==========================================
     @Override
     public void render(Graphics g) {
 
         g.drawImage(
-            bombImage,
+            deathImage,
             x,
             y,
             width,
